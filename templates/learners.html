@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Learners{% endblock %}
+{% block page_title %}Learner Directory{% endblock %}
+
+{% block header_actions %}
+  <button class="btn btn-primary" onclick="openAddModal()">➕ Register Learner</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Full Name</th>
+          <th>Email Address</th>
+          <th>Courses Enrolled</th>
+          <th>Completed</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in learners %}
+        <tr>
+          <td><strong>{{ l.roll_no }}</strong></td>
+          <td>{{ l.learner_name }}</td>
+          <td>{{ l.email }}</td>
+          <td>{{ l.course_count }}</td>
+          <td>{{ l.completed_count or 0 }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline"
+              onclick="openEditModal('{{ l.learner_id }}', '{{ l.roll_no|escape }}', '{{ l.learner_name|escape }}', '{{ l.email|escape }}')">
+              ✏️ Edit
+            </button>
+            <form action="{{ url_for('delete_learner', learner_id=l.learner_id) }}" method="POST" style="display:inline;"
+              onsubmit="return confirm('Delete learner {{ l.learner_name|escape }} ({{ l.roll_no }}) and their enrolments?');">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="empty-state">
+            <div class="empty-state-icon">👨‍🎓</div>
+            <div>No learners registered yet. Click <strong>Register Learner</strong> to add one.</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Register Learner Modal -->
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Register New Learner</h3>
+      <button class="btn btn-sm btn-outline" onclick="closeAddModal()">✕</button>
+    </div>
+    <form action="{{ url_for('add_learner') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label">Roll Number *</label>
+        <input type="text" name="roll_no" class="form-control" required placeholder="e.g. STU105">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input type="text" name="learner_name" class="form-control" required placeholder="e.g. Maya Patel">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input type="email" name="email" class="form-control" required placeholder="maya.patel@example.com">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Register</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Learner Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Learner Profile</h3>
+      <button class="btn btn-sm btn-outline" onclick="closeEditModal()">✕</button>
+    </div>
+    <form id="editForm" method="POST">
+      <div class="form-group">
+        <label class="form-label">Roll Number *</label>
+        <input type="text" id="edit_roll_no" name="roll_no" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input type="text" id="edit_learner_name" name="learner_name" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input type="email" id="edit_email" name="email" class="form-control" required>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAddModal() { document.getElementById('addModal').classList.add('open'); }
+function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+function openEditModal(id, roll, name, email) {
+  document.getElementById('editForm').action = '/learners/edit/' + id;
+  document.getElementById('edit_roll_no').value = roll;
+  document.getElementById('edit_learner_name').value = name;
+  document.getElementById('edit_email').value = email;
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+</script>
+{% endblock %}

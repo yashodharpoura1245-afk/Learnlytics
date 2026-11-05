@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}System Overview{% endblock %}
+
+{% block content %}
+<!-- Metric Cards Grid -->
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-icon">👨‍🎓</div>
+    <div>
+      <div class="metric-value">{{ stats.total_learners }}</div>
+      <div class="metric-label">Total Learners</div>
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-icon">📚</div>
+    <div>
+      <div class="metric-value">{{ stats.total_courses }}</div>
+      <div class="metric-label">Total Courses</div>
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-icon">📝</div>
+    <div>
+      <div class="metric-value">{{ stats.total_enrollments }}</div>
+      <div class="metric-label">Enrolments</div>
+    </div>
+  </div>
+  
+  <div class="metric-card">
+    <div class="metric-icon">✅</div>
+    <div>
+      <div class="metric-value">{{ stats.completed }}</div>
+      <div class="metric-label">Completed</div>
+    </div>
+  </div>
+  
+  <div class="metric-card highlight">
+    <div class="metric-icon">🏆</div>
+    <div>
+      <div class="metric-value">{{ stats.completion_rate }}%</div>
+      <div class="metric-label">Completion Rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Chart.js Visualizations Grid -->
+<div class="charts-grid">
+  <!-- Course Enrolment vs Completion Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title">Course Enrolment vs Completion</div>
+      <div class="chart-card-desc">Comparison of total registered learners versus completed course requirements</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="courseBarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Weekly Activity Trend Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title">Weekly Learning Activity Trends</div>
+      <div class="chart-card-desc">Interactive frequency of logged activities resampled by calendar week (last 8 weeks)</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="weeklyLineChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Enrolments Table -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">Recent Enrolments</h2>
+    <a href="{{ url_for('enrollments') }}" class="btn btn-sm btn-outline">View All</a>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Learner</th>
+          <th>Course</th>
+          <th>Enrolled Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in recent_enrollments %}
+        <tr>
+          <td><strong>{{ e.learner_name }}</strong> <span style="color:#64748b; font-size:0.8rem;">({{ e.roll_no }})</span></td>
+          <td>{{ e.course_name }}</td>
+          <td>{{ e.enrolled_at }}</td>
+          <td><span class="status-badge status-{{ e.status }}">{{ e.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div>No enrolments found in database.</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Chart.js Initialization Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // 1. Course Bar Chart
+  const courseCtx = document.getElementById("courseBarChart");
+  if (courseCtx) {
+    const courseLabels = {{ course_comp.labels | tojson }};
+    const enrolledData = {{ course_comp.enrolled | tojson }};
+    const completedData = {{ course_comp.completed | tojson }};
+
+    new Chart(courseCtx, {
+      type: "bar",
+      data: {
+        labels: courseLabels.length ? courseLabels : ["No courses"],
+        datasets: [
+          {
+            label: "Enrolled",
+            data: enrolledData.length ? enrolledData : [0],
+            backgroundColor: "#6366f1",
+            borderRadius: 6
+          },
+          {
+            label: "Completed",
+            data: completedData.length ? completedData : [0],
+            backgroundColor: "#22d3ee",
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#cbd5e1", font: { size: 12 } } },
+          tooltip: { mode: "index", intersect: false }
+        },
+        scales: {
+          x: { ticks: { color: "#94a3b8", maxRotation: 25 }, grid: { display: false } },
+          y: { ticks: { color: "#94a3b8", stepSize: 1 }, grid: { color: "#1e293b" }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // 2. Weekly Line Chart
+  const weeklyCtx = document.getElementById("weeklyLineChart");
+  if (weeklyCtx) {
+    const weeklyWeeks = {{ weekly.weeks | tojson }};
+    const weeklyCounts = {{ weekly.counts | tojson }};
+
+    new Chart(weeklyCtx, {
+      type: "line",
+      data: {
+        labels: weeklyWeeks.length ? weeklyWeeks : ["Current Week"],
+        datasets: [
+          {
+            label: "Activities Logged",
+            data: weeklyCounts.length ? weeklyCounts : [0],
+            borderColor: "#6366f1",
+            backgroundColor: "rgba(99, 102, 241, 0.18)",
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: "#6366f1",
+            pointRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#cbd5e1" } }
+        },
+        scales: {
+          x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+          y: { ticks: { color: "#94a3b8", stepSize: 1 }, grid: { color: "#1e293b" }, beginAtZero: true }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

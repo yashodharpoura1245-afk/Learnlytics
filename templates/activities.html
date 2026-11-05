@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Activities{% endblock %}
+{% block page_title %}Learning Activity Tracking{% endblock %}
+
+{% block header_actions %}
+  <button class="btn btn-primary" onclick="openAddModal()">➕ Log Activity</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Learner</th>
+          <th>Course</th>
+          <th>Activity Type</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in activities %}
+        <tr>
+          <td>{{ a.activity_date }}</td>
+          <td><strong>{{ a.learner_name }}</strong> <span style="color:#64748b; font-size:0.8rem;">({{ a.roll_no }})</span></td>
+          <td>{{ a.course_name }}</td>
+          <td><span class="status-badge status-active">{{ a.activity_type }}</span></td>
+          <td>
+            <form action="{{ url_for('toggle_activity', activity_id=a.activity_id) }}" method="POST" style="display:inline;">
+              {% if a.completed %}
+                <button type="submit" class="status-badge status-completed" style="border:none; cursor:pointer;" title="Click to toggle status">
+                  ✓ Completed
+                </button>
+              {% else %}
+                <button type="submit" class="status-badge status-dropped" style="border:none; cursor:pointer;" title="Click to toggle status">
+                  ⏳ In Progress
+                </button>
+              {% endif %}
+            </form>
+          </td>
+          <td>
+            <form action="{{ url_for('delete_activity', activity_id=a.activity_id) }}" method="POST" style="display:inline;"
+              onsubmit="return confirm('Delete this activity entry?');">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="empty-state">
+            <div class="empty-state-icon">⚡</div>
+            <div>No learning activities logged yet. Click <strong>Log Activity</strong> above to add student lesson milestones.</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Log Activity Modal -->
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Record Learning Activity</h3>
+      <button class="btn btn-sm btn-outline" onclick="closeAddModal()">✕</button>
+    </div>
+    <form action="{{ url_for('add_activity') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label">Select Active Enrolment *</label>
+        <select name="enrollment_id" class="form-control" required>
+          <option value="">-- Choose Learner Enrolment --</option>
+          {% for e in enrollments %}
+            <option value="{{ e.enrollment_id }}">{{ e.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Activity Type *</label>
+        <select name="activity_type" class="form-control" required>
+          <option value="Video Lecture">Video Lecture</option>
+          <option value="Quiz">Interactive Quiz</option>
+          <option value="Assignment">Coding Assignment</option>
+          <option value="Reading">Technical Reading</option>
+          <option value="Discussion Forum">Discussion Forum</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Activity Timestamp</label>
+        <input type="datetime-local" name="activity_date" class="form-control">
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="comp_check" name="completed" value="1" checked style="accent-color:var(--accent);">
+        <label for="comp_check" style="color:#cbd5e1; font-size:0.9rem; cursor:pointer;">Mark as Completed</label>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Activity</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAddModal() { document.getElementById('addModal').classList.add('open'); }
+function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+</script>
+{% endblock %}

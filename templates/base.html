@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Learnlytics{% endblock %} — E-Learning Course Analytics System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">📊</span>
+      <span>Learnlytics</span>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <span>🏠</span> Dashboard
+      </a>
+      <a href="{{ url_for('courses') }}" class="nav-link {% if request.endpoint == 'courses' %}active{% endif %}">
+        <span>📚</span> Courses
+      </a>
+      <a href="{{ url_for('learners') }}" class="nav-link {% if request.endpoint == 'learners' %}active{% endif %}">
+        <span>👨‍🎓</span> Learners
+      </a>
+      <a href="{{ url_for('enrollments') }}" class="nav-link {% if request.endpoint == 'enrollments' %}active{% endif %}">
+        <span>📝</span> Enrolments
+      </a>
+      <a href="{{ url_for('activities') }}" class="nav-link {% if request.endpoint == 'activities' %}active{% endif %}">
+        <span>⚡</span> Activities
+      </a>
+      <a href="{{ url_for('analytics_page') }}" class="nav-link {% if request.endpoint == 'analytics_page' %}active{% endif %}">
+        <span>📈</span> Analytics
+      </a>
+      <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
+        <span>📋</span> Reports
+      </a>
+    </nav>
+
+    <!-- Sidebar Connection Status Badge -->
+    <div class="sidebar-footer">
+      {% if db_status and db_status.connected and db_status.db_exists %}
+        <span class="badge-status status-online">● MySQL Connected</span>
+        <small style="color:#64748b;">DB: {{ db_status.config.database }}</small>
+      {% elif db_status and db_status.connected %}
+        <span class="badge-status status-offline">⚠️ Database Missing</span>
+        <small style="color:#f59e0b;">Import database.sql</small>
+      {% else %}
+        <span class="badge-status status-offline">✕ MySQL Disconnected</span>
+        <small style="color:#f87171;">Check credentials in .env</small>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-content">
+    <header class="page-header">
+      <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+      <div class="header-actions">{% block header_actions %}{% endblock %}</div>
+    </header>
+
+    <!-- Database Connection Warning Banner -->
+    {% if db_status and (not db_status.connected or not db_status.db_exists) %}
+      <div class="alert-box alert-error">
+        <strong>⚠️ Database Connection Notice:</strong>
+        {{ db_status.advice }}
+        {% if db_status.error %}
+          <div style="font-family:monospace; margin-top:4px; font-size:0.82rem; opacity:0.85;">Error: {{ db_status.error }}</div>
+        {% endif %}
+        <div class="alert-guide">
+          👉 <strong>How to resolve:</strong> Open the <code>.env</code> file in your project folder (<code>C:\Users\vtu21\Downloads\elearning_analytics\.env</code>) and set <code>MYSQL_PASSWORD=your_actual_mysql_password</code> (or set your MySQL host/user). Then restart or refresh the page.
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, msg in messages %}
+            <div class="alert-box alert-{{ category if category != 'error' else 'error' }}">
+              {{ msg }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Page Content Block -->
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

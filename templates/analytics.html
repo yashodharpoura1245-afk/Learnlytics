@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Learning Analytics & Inactivity Monitor{% endblock %}
+
+{% block content %}
+<!-- Mathematical Methodology Documentation Box -->
+<div class="documentation-box">
+  <h4>📐 Formula & Metric Documentation</h4>
+  <p>
+    <strong>Completion Rate Denominator:</strong> The completion rate is calculated using NumPy vectorized conditions:
+    <code>Completion Rate = (Completed Enrolments / Total Enrolments) × 100</code>.
+    The denominator is strictly the total number of registered enrolments. If zero enrolments exist, it yields <code>0.0%</code>.
+  </p>
+  <p style="margin-top:6px;">
+    <strong>14-Day Inactivity Threshold Definition:</strong> An active enrolment is flagged as <em>inactive</em> if the learner has recorded zero platform learning activities in the past 14 days (or since enrolment date if never active).
+    <em>Note: Missing activity is treated as an actionable pedagogical signal for instructor check-in and engagement support, not definitive proof that learning has stopped.</em>
+  </p>
+</div>
+
+<!-- Interactive Chart.js Visualizations Grid -->
+<div class="charts-grid">
+  <!-- Course Completion Bar Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title">Course-wise Enrolment & Completion Rates</div>
+      <div class="chart-card-desc">Total registered vs completed student volume across all courses</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="analyticsBarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Weekly Activity Line Chart -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title">Weekly Activity Trend (Last 8 Weeks)</div>
+      <div class="chart-card-desc">Resampled weekly learning frequency powered by Pandas time-series analysis</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="analyticsLineChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Enrolment Status Breakdown Doughnut -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title">Completed vs Incomplete Enrolments</div>
+      <div class="chart-card-desc">Proportional distribution of active, completed, and dropped enrolments</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="statusDoughnutChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Activity Type Distribution Pie -->
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div class="chart-card-title">Activity Type Breakdown</div>
+      <div class="chart-card-desc">Distribution across Video Lectures, Quizzes, Assignments, and Readings</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="activityPieChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Inactive Enrolment Report (14-Day Threshold) Table -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">⚠️ Inactive Enrolment Early Warning Report (14-Day Rule)</h2>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+        Learners in active courses with no logged platform engagement in the last 14 days
+      </p>
+    </div>
+    <a href="{{ url_for('download_inactive_csv') }}" class="btn btn-sm btn-outline">⬇ Export CSV</a>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Learner</th>
+          <th>Roll No</th>
+          <th>Course</th>
+          <th>Enrolled On</th>
+          <th>Last Activity Date</th>
+          <th>Days Inactive</th>
+          <th>Urgency Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in inactive_enrollments %}
+        <tr>
+          <td><strong>{{ row.learner_name }}</strong></td>
+          <td>{{ row.roll_no }}</td>
+          <td>{{ row.course_name }}</td>
+          <td>{{ row.enrolled_at }}</td>
+          <td>{{ row.last_activity }}</td>
+          <td><strong>{{ row.days_inactive }}</strong> days</td>
+          <td>
+            <span class="status-badge urgency-{{ row.urgency }}">
+              {{ row.urgency | upper }}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="empty-state">
+            <div class="empty-state-icon">🌟</div>
+            <div>No inactive enrolments found! All enrolled students have logged activity within the past 14 days.</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Chart.js Setup Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // 1. Course Bar Chart
+  const barCtx = document.getElementById("analyticsBarChart");
+  if (barCtx) {
+    const labels = {{ course_comp.labels | tojson }};
+    const enrolled = {{ course_comp.enrolled | tojson }};
+    const completed = {{ course_comp.completed | tojson }};
+
+    new Chart(barCtx, {
+      type: "bar",
+      data: {
+        labels: labels.length ? labels : ["No Courses"],
+        datasets: [
+          { label: "Enrolled", data: enrolled, backgroundColor: "#6366f1", borderRadius: 6 },
+          { label: "Completed", data: completed, backgroundColor: "#22d3ee", borderRadius: 6 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        scales: {
+          x: { ticks: { color: "#94a3b8", maxRotation: 25 }, grid: { display: false } },
+          y: { ticks: { color: "#94a3b8", stepSize: 1 }, grid: { color: "#1e293b" }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // 2. Weekly Line Chart
+  const lineCtx = document.getElementById("analyticsLineChart");
+  if (lineCtx) {
+    const weeks = {{ weekly.weeks | tojson }};
+    const counts = {{ weekly.counts | tojson }};
+
+    new Chart(lineCtx, {
+      type: "line",
+      data: {
+        labels: weeks,
+        datasets: [
+          {
+            label: "Activities",
+            data: counts,
+            borderColor: "#22d3ee",
+            backgroundColor: "rgba(34, 211, 238, 0.15)",
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: "#22d3ee"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        scales: {
+          x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+          y: { ticks: { color: "#94a3b8", stepSize: 1 }, grid: { color: "#1e293b" }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // 3. Status Doughnut Chart
+  const statusCtx = document.getElementById("statusDoughnutChart");
+  if (statusCtx) {
+    const statusData = {{ status_dist.counts | tojson }};
+    new Chart(statusCtx, {
+      type: "doughnut",
+      data: {
+        labels: {{ status_dist.labels | tojson }},
+        datasets: [
+          {
+            data: statusData,
+            backgroundColor: ["#10b981", "#6366f1", "#ef4444"],
+            borderWidth: 2,
+            borderColor: "#111827"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { color: "#cbd5e1", padding: 16 } } }
+      }
+    });
+  }
+
+  // 4. Activity Type Pie Chart
+  const actCtx = document.getElementById("activityPieChart");
+  if (actCtx) {
+    const actTypes = {{ activity_types.types | tojson }};
+    const actCounts = {{ activity_types.counts | tojson }};
+    new Chart(actCtx, {
+      type: "pie",
+      data: {
+        labels: actTypes.length ? actTypes : ["No Activities"],
+        datasets: [
+          {
+            data: actCounts.length ? actCounts : [1],
+            backgroundColor: ["#6366f1", "#22d3ee", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6"],
+            borderWidth: 2,
+            borderColor: "#111827"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { color: "#cbd5e1", padding: 12 } } }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

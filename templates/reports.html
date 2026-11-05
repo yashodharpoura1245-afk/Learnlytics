@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Exportable Data Reports{% endblock %}
+
+{% block content %}
+<div class="metric-grid">
+  <!-- Learners Report Card -->
+  <div class="metric-card">
+    <div class="metric-icon">👨‍🎓</div>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:1.05rem; color:#ffffff;">Learners Directory</div>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 14px 0;">
+        Full student roster with assigned roll numbers and contact details.
+      </p>
+      <a href="{{ url_for('download_learners_csv') }}" class="btn btn-sm btn-primary">⬇ Export Learners CSV</a>
+    </div>
+  </div>
+
+  <!-- Courses Report Card -->
+  <div class="metric-card">
+    <div class="metric-icon">📚</div>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:1.05rem; color:#ffffff;">Course Catalog</div>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 14px 0;">
+        Active courses list with categories and registered learner counts.
+      </p>
+      <a href="{{ url_for('download_courses_csv') }}" class="btn btn-sm btn-primary">⬇ Export Courses CSV</a>
+    </div>
+  </div>
+
+  <!-- Enrolments Report Card -->
+  <div class="metric-card">
+    <div class="metric-icon">📝</div>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:1.05rem; color:#ffffff;">Enrolment Records</div>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 14px 0;">
+        All learner-course registrations with dates and completion statuses.
+      </p>
+      <a href="{{ url_for('download_enrollments_csv') }}" class="btn btn-sm btn-primary">⬇ Export Enrolments CSV</a>
+    </div>
+  </div>
+
+  <!-- Weekly Activity Report Card -->
+  <div class="metric-card">
+    <div class="metric-icon">⚡</div>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:1.05rem; color:#ffffff;">Weekly Activity Data</div>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 14px 0;">
+        Aggregated activity counts resampled week-by-week for trend analysis.
+      </p>
+      <a href="{{ url_for('download_weekly_csv') }}" class="btn btn-sm btn-primary">⬇ Export Weekly CSV</a>
+    </div>
+  </div>
+
+  <!-- Inactive Enrolment Report Card -->
+  <div class="metric-card highlight">
+    <div class="metric-icon">⚠️</div>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:1.05rem; color:#ffffff;">14-Day Inactivity Audit</div>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 14px 0;">
+        Early warning list of students with zero activity in the last 14+ days.
+      </p>
+      <a href="{{ url_for('download_inactive_csv') }}" class="btn btn-sm btn-primary">⬇ Export Inactivity CSV</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Enrolments{% endblock %}
+{% block page_title %}Course Enrolments{% endblock %}
+
+{% block header_actions %}
+  <button class="btn btn-primary" onclick="openAddModal()">➕ Create Enrolment</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Learner</th>
+          <th>Course</th>
+          <th>Enrolled Date</th>
+          <th>Activities</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in enrollments %}
+        <tr>
+          <td>#{{ e.enrollment_id }}</td>
+          <td><strong>{{ e.learner_name }}</strong> <span style="color:#64748b; font-size:0.8rem;">({{ e.roll_no }})</span></td>
+          <td>{{ e.course_name }}</td>
+          <td>{{ e.enrolled_at }}</td>
+          <td>{{ e.total_activities }} logged</td>
+          <td>
+            <form action="{{ url_for('update_enrollment_status', enrollment_id=e.enrollment_id) }}" method="POST" style="display:inline;">
+              <select name="status" onchange="this.form.submit()" class="form-control" style="display:inline-block; width:auto; padding:4px 8px; font-size:0.8rem;">
+                <option value="active" {% if e.status=='active' %}selected{% endif %}>Active</option>
+                <option value="completed" {% if e.status=='completed' %}selected{% endif %}>Completed</option>
+                <option value="dropped" {% if e.status=='dropped' %}selected{% endif %}>Dropped</option>
+              </select>
+            </form>
+          </td>
+          <td>
+            <form action="{{ url_for('delete_enrollment', enrollment_id=e.enrollment_id) }}" method="POST" style="display:inline;"
+              onsubmit="return confirm('Delete this enrolment record?');">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <div>No enrolment records found. Click <strong>Create Enrolment</strong> to enroll a learner.</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- New Enrolment Modal -->
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">New Course Enrolment</h3>
+      <button class="btn btn-sm btn-outline" onclick="closeAddModal()">✕</button>
+    </div>
+    <form action="{{ url_for('add_enrollment') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label">Select Learner *</label>
+        <select name="learner_id" class="form-control" required>
+          <option value="">-- Choose Learner --</option>
+          {% for l in learners %}
+            <option value="{{ l.learner_id }}">{{ l.learner_name }} ({{ l.roll_no }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select Course *</label>
+        <select name="course_id" class="form-control" required>
+          <option value="">-- Choose Course --</option>
+          {% for c in courses %}
+            <option value="{{ c.course_id }}">{{ c.course_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Enrolment Date</label>
+        <input type="date" name="enrolled_at" class="form-control">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm Enrolment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAddModal() { document.getElementById('addModal').classList.add('open'); }
+function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+</script>
+{% endblock %}
